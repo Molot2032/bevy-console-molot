@@ -3,7 +3,12 @@
 
 use bevy::prelude::*;
 pub use bevy_console_derive::ConsoleCommand;
+
+#[cfg(feature = "ui")]
 use bevy_egui::EguiPlugin;
+
+#[cfg(feature = "rustyline")]
+use rustyline::setup_rustyline;
 
 use crate::commands::clear::{clear_command, ClearCommand};
 use crate::commands::exit::{exit_command, ExitCommand};
@@ -14,7 +19,10 @@ pub use crate::console::{
 };
 pub use crate::log::*;
 
-use crate::console::{console_ui, receive_console_line, ConsoleState};
+#[cfg(feature = "ui")]
+use crate::console::console_ui;
+
+use crate::console::{receive_console_line, ConsoleState};
 pub use clap;
 
 // mod color;
@@ -23,6 +31,10 @@ mod commands;
 mod console;
 mod log;
 mod macros;
+#[cfg(feature = "rustyline")]
+mod rustyline;
+#[cfg(feature = "rustyline")]
+pub use rustyline::ConsoleInterrupted;
 /// Console plugin.
 pub struct ConsolePlugin;
 
@@ -60,6 +72,7 @@ impl Plugin for ConsolePlugin {
             .add_systems(
                 Update,
                 (
+                    #[cfg(feature = "ui")]
                     console_ui.in_set(ConsoleSet::ConsoleUI),
                     receive_console_line.in_set(ConsoleSet::PostCommands),
                 ),
@@ -74,8 +87,12 @@ impl Plugin for ConsolePlugin {
                 ),
             );
 
+        #[cfg(feature = "rustyline")]
+        setup_rustyline(app);
+
         // Don't initialize an egui plugin if one already exists.
         // This can happen if another plugin is using egui and was installed before us.
+        #[cfg(feature = "ui")]
         if !app.is_plugin_added::<EguiPlugin>() {
             app.add_plugins(EguiPlugin);
         }

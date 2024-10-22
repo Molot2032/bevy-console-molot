@@ -1,7 +1,30 @@
 use std::collections::HashSet;
 
 use ansi_parser::AnsiParser;
+
+#[cfg(feature = "ui")]
 use bevy_egui::egui::Color32;
+
+/// Remove dependence on egui's Color32
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct Colour {
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
+}
+
+impl Colour {
+    pub fn from_rgb(r: u8, g: u8, b: u8) -> Self {
+        Self { r, g, b }
+    }
+}
+
+#[cfg(feature = "ui")]
+impl Into<Color32> for Colour {
+    fn into(self) -> Color32 {
+        Color32::from_rgb(self.r, self.g, self.b)
+    }
+}
 
 pub(crate) fn parse_ansi_styled_str(
     ansi_string: &str,
@@ -50,24 +73,24 @@ fn parse_graphics_mode(modes: &[u8]) -> HashSet<TextFormattingOverride> {
     results
 }
 
-fn ansi_color_code_to_color32(color_code: u8) -> Color32 {
+fn ansi_color_code_to_color32(color_code: u8) -> Colour {
     match color_code {
-        1 => Color32::from_rgb(222, 56, 43),    // red
-        2 => Color32::from_rgb(57, 181, 74),    // green
-        3 => Color32::from_rgb(255, 199, 6),    // yellow
-        4 => Color32::from_rgb(0, 111, 184),    // blue
-        5 => Color32::from_rgb(118, 38, 113),   // magenta
-        6 => Color32::from_rgb(44, 181, 233),   // cyan
-        7 => Color32::from_rgb(204, 204, 204),  // white
-        8 => Color32::from_rgb(128, 128, 128),  // bright black
-        9 => Color32::from_rgb(255, 0, 0),      // bright red
-        10 => Color32::from_rgb(0, 255, 0),     // bright green
-        11 => Color32::from_rgb(255, 255, 0),   // bright yellow
-        12 => Color32::from_rgb(0, 0, 255),     // bright blue
-        13 => Color32::from_rgb(255, 0, 255),   // bright magenta
-        14 => Color32::from_rgb(0, 255, 255),   // bright cyan
-        15 => Color32::from_rgb(255, 255, 255), // bright white
-        _ => Color32::from_rgb(1, 1, 1),        // black
+        1 => Colour::from_rgb(222, 56, 43),    // red
+        2 => Colour::from_rgb(57, 181, 74),    // green
+        3 => Colour::from_rgb(255, 199, 6),    // yellow
+        4 => Colour::from_rgb(0, 111, 184),    // blue
+        5 => Colour::from_rgb(118, 38, 113),   // magenta
+        6 => Colour::from_rgb(44, 181, 233),   // cyan
+        7 => Colour::from_rgb(204, 204, 204),  // white
+        8 => Colour::from_rgb(128, 128, 128),  // bright black
+        9 => Colour::from_rgb(255, 0, 0),      // bright red
+        10 => Colour::from_rgb(0, 255, 0),     // bright green
+        11 => Colour::from_rgb(255, 255, 0),   // bright yellow
+        12 => Colour::from_rgb(0, 0, 255),     // bright blue
+        13 => Colour::from_rgb(255, 0, 255),   // bright magenta
+        14 => Colour::from_rgb(0, 255, 255),   // bright cyan
+        15 => Colour::from_rgb(255, 255, 255), // bright white
+        _ => Colour::from_rgb(1, 1, 1),        // black
     }
 }
 
@@ -79,8 +102,8 @@ pub(crate) enum TextFormattingOverride {
     Italic,
     Underline,
     Strikethrough,
-    Foreground(Color32),
-    Background(Color32),
+    Foreground(Colour),
+    Background(Colour),
 }
 
 #[cfg(test)]
@@ -161,7 +184,7 @@ mod test {
             vec![
                 (
                     0,
-                    HashSet::from([TextFormattingOverride::Foreground(Color32::from_rgb(
+                    HashSet::from([TextFormattingOverride::Foreground(Colour::from_rgb(
                         222, 56, 43
                     ))])
                 ),
@@ -179,7 +202,7 @@ mod test {
             vec![
                 (
                     0,
-                    HashSet::from([TextFormattingOverride::Background(Color32::from_rgb(
+                    HashSet::from([TextFormattingOverride::Background(Colour::from_rgb(
                         222, 56, 43
                     ))])
                 ),
@@ -198,7 +221,7 @@ mod test {
                 (
                     0,
                     HashSet::from([
-                        TextFormattingOverride::Foreground(Color32::from_rgb(222, 56, 43)),
+                        TextFormattingOverride::Foreground(Colour::from_rgb(222, 56, 43)),
                         TextFormattingOverride::Bold,
                     ])
                 ),
@@ -219,7 +242,7 @@ mod test {
                     5,
                     HashSet::from([
                         TextFormattingOverride::Reset,
-                        TextFormattingOverride::Foreground(Color32::from_rgb(222, 56, 43))
+                        TextFormattingOverride::Foreground(Colour::from_rgb(222, 56, 43))
                     ])
                 ),
                 (10, HashSet::from([TextFormattingOverride::Reset]))
@@ -237,7 +260,7 @@ mod test {
                 (0, HashSet::from([TextFormattingOverride::Bold])),
                 (
                     5,
-                    HashSet::from([TextFormattingOverride::Foreground(Color32::from_rgb(
+                    HashSet::from([TextFormattingOverride::Foreground(Colour::from_rgb(
                         222, 56, 43
                     ))])
                 ),

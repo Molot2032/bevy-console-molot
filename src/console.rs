@@ -4,13 +4,19 @@ use bevy::ecs::{
     world::unsafe_world_cell::UnsafeWorldCell,
 };
 use bevy::{input::keyboard::KeyboardInput, prelude::*};
+
+#[cfg(feature = "ui")]
 use bevy_egui::egui::{self, Align, ScrollArea, TextEdit};
+#[cfg(feature = "ui")]
 use bevy_egui::egui::{text::LayoutJob, text_selection::CCursorRange};
+#[cfg(feature = "ui")]
 use bevy_egui::egui::{Context, Id};
+#[cfg(feature = "ui")]
 use bevy_egui::{
     egui::{epaint::text::cursor::CCursor, Color32, FontId, TextFormat},
     EguiContexts,
 };
+
 use clap::{CommandFactory, FromArgMatches};
 use shlex::Shlex;
 use std::marker::PhantomData;
@@ -21,7 +27,7 @@ use std::{
 };
 
 use crate::{
-    color::{parse_ansi_styled_str, TextFormattingOverride},
+    color::{parse_ansi_styled_str, Colour, TextFormattingOverride},
     ConsoleSet,
 };
 
@@ -238,9 +244,9 @@ pub struct ConsoleConfiguration {
     /// show the title bar or not
     pub show_title_bar: bool,
     /// Background color of console window  
-    pub background_color: Color32,
+    pub background_color: Colour,
     /// Foreground (text) color
-    pub foreground_color: Color32,
+    pub foreground_color: Colour,
     /// Number of suggested commands to show
     pub num_suggestions: usize,
 }
@@ -261,8 +267,8 @@ impl Default for ConsoleConfiguration {
             resizable: true,
             moveable: true,
             show_title_bar: true,
-            background_color: Color32::from_black_alpha(102),
-            foreground_color: Color32::LIGHT_GRAY,
+            background_color: Colour::from_rgb(102, 102, 102),
+            foreground_color: Colour::from_rgb(220, 220, 220),
             num_suggestions: 4,
         }
     }
@@ -345,10 +351,12 @@ impl Default for ConsoleState {
     }
 }
 
+#[cfg(feature = "ui")]
 fn default_style(config: &ConsoleConfiguration) -> TextFormat {
-    TextFormat::simple(FontId::monospace(14f32), config.foreground_color)
+    TextFormat::simple(FontId::monospace(14f32), config.foreground_color.into())
 }
 
+#[cfg(feature = "ui")]
 fn style_ansi_text(str: &str, config: &ConsoleConfiguration) -> LayoutJob {
     let mut layout_job = LayoutJob::default();
     let mut current_style = default_style(config);
@@ -380,8 +388,8 @@ fn style_ansi_text(str: &str, config: &ConsoleConfiguration) -> LayoutJob {
                 TextFormattingOverride::Strikethrough => {
                     current_style.strikethrough = egui::Stroke::new(1., config.foreground_color)
                 }
-                TextFormattingOverride::Foreground(c) => current_style.color = c,
-                TextFormattingOverride::Background(c) => current_style.background = c,
+                TextFormattingOverride::Foreground(c) => current_style.color = c.into(),
+                TextFormattingOverride::Background(c) => current_style.background = c.into(),
                 _ => {}
             }
         }
@@ -391,6 +399,7 @@ fn style_ansi_text(str: &str, config: &ConsoleConfiguration) -> LayoutJob {
     layout_job
 }
 
+#[cfg(feature = "ui")]
 pub(crate) fn console_ui(
     mut egui_context: EguiContexts,
     config: Res<ConsoleConfiguration>,
@@ -428,12 +437,12 @@ pub(crate) fn console_ui(
             .movable(config.moveable)
             .title_bar(config.show_title_bar)
             .frame(egui::Frame {
-                fill: config.background_color,
+                fill: config.background_color.into(),
                 ..Default::default()
             })
             .show(ctx, |ui| {
-                ui.style_mut().visuals.extreme_bg_color = config.background_color;
-                ui.style_mut().visuals.override_text_color = Some(config.foreground_color);
+                ui.style_mut().visuals.extreme_bg_color = config.background_color.into();
+                ui.style_mut().visuals.override_text_color = Some(config.foreground_color.into());
 
                 ui.vertical(|ui| {
                     let scroll_height = ui.available_height() - 30.0;
@@ -616,6 +625,7 @@ fn console_key_pressed(keyboard_input: &KeyboardInput, configured_keys: &[KeyCod
     false
 }
 
+#[cfg(feature = "ui")]
 fn set_cursor_pos(ctx: &Context, id: Id, pos: usize) {
     if let Some(mut state) = TextEdit::load_state(ctx, id) {
         state
